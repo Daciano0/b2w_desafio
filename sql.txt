@@ -1,0 +1,23 @@
+use b2w;
+
+SELECT t.event_type,  ee.value - e1.value as value
+FROM ( SELECT * FROM `events` e GROUP BY e.event_type HAVING COUNT(e.event_type) > 1) AS t
+    JOIN `events` ee ON ee.event_type = t.event_type 
+          AND ee.time = (SELECT eee.time 
+                          FROM (select *, ROW_NUMBER() OVER (partition by event_type order BY time Desc) `ordem`
+                                from `events` e2
+                                order by e2.time desc
+                          ) eee
+                           WHERE eee.event_type = t.event_type and eee.ordem = 2 LIMIT 1)
+     JOIN `events` e1 ON e1.event_type = t.event_type 
+		AND e1.time = (SELECT min(e2.time) 
+                       FROM `events` e2 WHERE e2.event_type = t.event_type LIMIT 1);
+                       
+                       
+                       insert into events values
+(2,   5,  '2015-05-09 12:42:00'),
+(4, -42,  '2015-05-09 13:19:57'),
+(2,   2,  '2015-05-09 14:48:30'),
+(2,   7,  '2015-05-09 12:54:39'),
+(3,  16,  '2015-05-09 13:19:57'),
+(3,  20,  '2015-05-09 15:01:09')   
